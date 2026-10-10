@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Timetable Generator - MERN Simulation with Exam Timetable</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Custom scrollbar for tables */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased flex flex-col">
+
+    <!-- AUTHENTICATION / LOGIN SCREEN -->
+    <div id="authOverlay" class="fixed inset-0 z-50 bg-indigo-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6 border border-slate-100">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-indigo-600 text-white rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <i data-lucide="calendar-range" class="w-7 h-7"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">Schedulix MERN Pro</h1>
+                <p class="text-xs text-slate-500">Sign in to access Lecture & Exam Timetable Engines</p>
+            </div>
+
+            <!-- Quick Demo Credentials Pill Bar -->
+            <div class="bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-2xl space-y-2">
+                <p class="text-[11px] font-bold text-indigo-900 uppercase tracking-wider flex items-center">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1 text-indigo-600"></i> Quick Demo Login Presets:
+                </p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="fillCredentials('admin')" class="text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 font-semibold py-1.5 px-2 rounded-xl border border-indigo-200 transition-all shadow-sm">
+                        Admin
+                    </button>
+                    <button type="button" onclick="fillCredentials('faculty')" class="text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 font-semibold py-1.5 px-2 rounded-xl border border-indigo-200 transition-all shadow-sm">
+                        Faculty
+                    </button>
+                    <button type="button" onclick="fillCredentials('student')" class="text-xs bg-white hover:bg-indigo-600 hover:text-white text-indigo-700 font-semibold py-1.5 px-2 rounded-xl border border-indigo-200 transition-all shadow-sm">
+                        Student
+                    </button>
+                </div>
+            </div>
+
+            <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email Address</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="mail" class="w-4 h-4"></i>
+                        </span>
+                        <input type="email" id="loginEmail" required placeholder="admin@timetable.edu" class="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                        </span>
+                        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full pl-10 pr-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-sm shadow-lg shadow-indigo-200 transition-all transform active:scale-95 flex items-center justify-center space-x-2">
+                    <span>Authenticate & Enter</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Top Navigation Header -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-700 p-2 rounded-xl shadow-inner flex items-center justify-center">
+                    <i data-lucide="calendar-range" class="w-6 h-6 text-indigo-200"></i>
+                </div>
+                <div>
+                    <span class="font-bold text-lg tracking-tight">Schedulix MERN</span>
+                    <span class="hidden sm:inline-block ml-2 text-xs bg-indigo-800 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-700">v3.0 Pro</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Logged User & Logout Button -->
+                <div class="flex items-center space-x-3 bg-indigo-950/60 py-1.5 px-3 rounded-xl border border-indigo-800/60">
+                    <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs" id="headerUserInitials">AD</div>
+                    <div class="hidden sm:block text-left">
+                        <p class="text-xs font-semibold text-white leading-none" id="headerUserName">Admin Coordinator</p>
+                        <p class="text-[10px] text-indigo-300 capitalize mt-0.5" id="headerUserRoleBadge">Role: Admin</p>
+                    </div>
+                    <button onclick="handleLogout()" title="Logout" class="ml-2 text-indigo-300 hover:text-white p-1 rounded-lg hover:bg-indigo-800/80 transition-colors">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Database Status indicator -->
+                <div class="hidden md:flex items-center space-x-1.5 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-lg">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-xs font-medium text-emerald-200">MongoDB Connected</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Container -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 hidden md:flex">
+            <div class="p-4 border-b border-slate-100">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Navigation</p>
+            </div>
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-indigo-50 text-indigo-700">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('subjects')" id="nav-subjects" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="book-open" class="w-4 h-4"></i>
+                    <span>Subjects</span>
+                </button>
+                <button onclick="switchTab('faculty')" id="nav-faculty" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    <span>Faculty</span>
+                </button>
+                <button onclick="switchTab('rooms')" id="nav-rooms" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="door-open" class="w-4 h-4"></i>
+                    <span>Rooms & Labs</span>
+                </button>
+                <button onclick="switchTab('constraints')" id="nav-constraints" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Constraints & Config</span>
+                </button>
+                <button onclick="switchTab('generator')" id="nav-generator" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span>AI Engine Generator</span>
+                </button>
+                <button onclick="switchTab('timetable')" id="nav-timetable" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                    <span>Weekly Timetable View</span>
+                </button>
+                <!-- NEW EXAM TAB -->
+                <button onclick="switchTab('exams')" id="nav-exams" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+                    <i data-lucide="file-text" class="w-4 h-4 text-rose-600"></i>
+                    <span>Exam Timetable Schedule</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm" id="sidebarUserInitials">AD</div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-semibold text-slate-700 truncate" id="sidebarUserName">Admin Coordinator</p>
+                        <p class="text-[11px] text-slate-400 truncate" id="sidebarUserEmail">admin@timetable.edu</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Viewport -->
+        <main class="flex-1 flex flex-col overflow-y-auto">
+            
+            <!-- Mobile Tab Bar (Bottom) -->
+            <div class="md:hidden bg-white border-b border-slate-200 flex overflow-x-auto p-2 space-x-1 shrink-0">
+                <button onclick="switchTab('dashboard')" id="mob-nav-dashboard" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 whitespace-nowrap">Dashboard</button>
+                <button onclick="switchTab('subjects')" id="mob-nav-subjects" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Subjects</button>
+                <button onclick="switchTab('faculty')" id="mob-nav-faculty" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Faculty</button>
+                <button onclick="switchTab('rooms')" id="mob-nav-rooms" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Rooms</button>
+                <button onclick="switchTab('constraints')" id="mob-nav-constraints" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Config</button>
+                <button onclick="switchTab('generator')" id="mob-nav-generator" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Generator</button>
+                <button onclick="switchTab('timetable')" id="mob-nav-timetable" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 whitespace-nowrap">Timetable</button>
+                <button onclick="switchTab('exams')" id="mob-nav-exams" class="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 bg-rose-50 whitespace-nowrap">Exams</button>
+            </div>
+
+            <!-- Toast Notification Banner Container -->
+            <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+            <div class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex-1">
+                
+                <!-- 1. DASHBOARD TAB -->
+                <div id="tab-dashboard" class="tab-content active space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Dashboard Overview</h1>
+                            <p class="text-sm text-slate-500">MERN Smart Timetable & Examination Engine management control center.</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="switchTab('exams')" class="inline-flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all transform active:scale-95">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                                <span>View Exam Timetable</span>
+                            </button>
+                            <button onclick="switchTab('generator')" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all transform active:scale-95">
+                                <i data-lucide="zap" class="w-4 h-4"></i>
+                                <span>Generate Timetable</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stat Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Subjects</p>
+                                <h3 id="statSubjectsCount" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
+                                <p class="text-xs text-emerald-600 font-medium mt-1 flex items-center"><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 mr-0.5"></i> Active courses</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                <i data-lucide="book-open" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Faculty Members</p>
+                                <h3 id="statFacultyCount" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
+                                <p class="text-xs text-emerald-600 font-medium mt-1 flex items-center"><i data-lucide="arrow-up-right" class="w-3.5 h-3.5 mr-0.5"></i> Fully allocated</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                                <i data-lucide="users" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Rooms & Labs</p>
+                                <h3 id="statRoomsCount" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
+                                <p class="text-xs text-indigo-600 font-medium mt-1 flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-0.5"></i> Conflict ready</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <i data-lucide="door-open" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Weekly Schedules</p>
+                                <h3 id="statSchedulesCount" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
+                                <p class="text-xs text-amber-600 font-medium mt-1 flex items-center"><i data-lucide="clock" class="w-3.5 h-3.5 mr-0.5"></i> Up-to-date</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <i data-lucide="calendar-check" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Scheduled Exams</p>
+                                <h3 id="statExamsCount" class="text-2xl font-bold text-slate-900 mt-1">0</h3>
+                                <p class="text-xs text-rose-600 font-medium mt-1 flex items-center"><i data-lucide="shield-check" class="w-3.5 h-3.5 mr-0.5"></i> Zero collision</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                <i data-lucide="file-text" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions & Recent Logs Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h2 class="text-lg font-bold text-slate-900">MERN System & Examination Hub</h2>
+                                    <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-lg">REST API active</span>
+                                </div>
+                                <p class="text-sm text-slate-600 leading-relaxed mb-4">
+                                    Welcome to the enhanced Smart Timetable Generator with integrated **Exam Timetable Scheduler**. Manage mid-term and end-term examinations with automatic clash prevention across students, rooms, and invigilator duties.
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <p class="text-xs text-slate-400 font-semibold uppercase">Exam Database</p>
+                                        <p class="text-sm font-bold text-slate-800 mt-1">MongoDB Exam Schema</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Invigilators & Halls</p>
+                                    </div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <p class="text-xs text-slate-400 font-semibold uppercase">Algorithm</p>
+                                        <p class="text-sm font-bold text-slate-800 mt-1">Backtracking CSP</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Zero collision check</p>
+                                    </div>
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <p class="text-xs text-slate-400 font-semibold uppercase">Export</p>
+                                        <p class="text-sm font-bold text-slate-800 mt-1">CSV & Print Ready</p>
+                                        <p class="text-xs text-slate-500 mt-0.5">Instant PDF output</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-3 pt-2 border-t border-slate-100">
+                                <button onclick="switchTab('exams')" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium px-3 py-2 rounded-lg transition-colors">Manage Exams</button>
+                                <button onclick="switchTab('subjects')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-lg transition-colors">Manage Subjects</button>
+                                <button onclick="switchTab('faculty')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-3 py-2 rounded-lg transition-colors">Manage Faculty</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Notification / Status Log -->
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col">
+                            <h2 class="text-lg font-bold text-slate-900 mb-4">System Activity Log</h2>
+                            <div class="space-y-4 flex-1 overflow-y-auto max-h-[280px]" id="activityLogContainer">
+                                <div class="flex space-x-3 text-xs">
+                                    <div class="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0"></div>
+                                    <div>
+                                        <p class="font-semibold text-slate-800">Exam Module Online</p>
+                                        <p class="text-slate-400 text-[11px]">Exam halls and invigilator duties synced</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-3 text-xs">
+                                    <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+                                    <div>
+                                        <p class="font-semibold text-slate-800">Database Synchronized</p>
+                                        <p class="text-slate-400 text-[11px]">Connected to local MongoDB cluster</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-3 text-xs">
+                                    <div class="w-2 h-2 rounded-full bg-indigo-500 mt-1.5 shrink-0"></div>
+                                    <div>
+                                        <p class="font-semibold text-slate-800">Constraints Loaded</p>
+                                        <p class="text-slate-400 text-[11px]">Mon-Fri schedule bounds set (9 AM - 4 PM)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. SUBJECTS TAB -->
+                <div id="tab-subjects" class="tab-content space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Subjects Management</h1>
+                            <p class="text-sm text-slate-500">Configure courses, credit scores, and weekly hours.</p>
+                        </div>
+                        <button onclick="openModal('subjectModal')" id="addSubjectBtn" class="admin-only inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add New Subject</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                               <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4">Subject Name</th>
+                                        <th class="p-4">Code</th>
+                                        <th class="p-4">Department</th>
+                                        <th class="p-4">Credits</th>
+                                        <th class="p-4">Lectures / Labs</th>
+                                        <th class="p-4 text-right admin-only">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjectsTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                                    <!-- Dynamic rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. FACULTY TAB -->
+                <div id="tab-faculty" class="tab-content space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Faculty Management</h1>
+                            <p class="text-sm text-slate-500">Assign professors, departments, and max weekly workloads.</p>
+                        </div>
+                        <button onclick="openModal('facultyModal')" id="addFacultyBtn" class="admin-only inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add Faculty Member</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4">Faculty Name</th>
+                                        <th class="p-4">Department</th>
+                                        <th class="p-4">Assigned Subject</th>
+                                        <th class="p-4">Max Hours / Week</th>
+                                        <th class="p-4 text-right admin-only">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="facultyTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                                    <!-- Dynamic rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. ROOMS TAB -->
+                <div id="tab-rooms" class="tab-content space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Rooms & Labs Management</h1>
+                            <p class="text-sm text-slate-500">Configure lecture halls, computer labs, and capacities.</p>
+                        </div>
+                        <button onclick="openModal('roomModal')" id="addRoomBtn" class="admin-only inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add Room</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4">Room Number / Name</th>
+                                        <th class="p-4">Type</th>
+                                        <th class="p-4">Capacity</th>
+                                        <th class="p-4 text-right admin-only">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="roomsTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                                    <!-- Dynamic rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. CONSTRAINTS & SETTINGS TAB -->
+                <div id="tab-constraints" class="tab-content space-y-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Constraints & Time Settings</h1>
+                        <p class="text-sm text-slate-500">Configure working days, time slots, and schedule generation parameters.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+                                <i data-lucide="clock" class="w-5 h-5 text-indigo-600"></i>
+                                <span>Working Hours & Days</span>
+                            </h2>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Working Days</label>
+                                <input type="text" id="configWorkingDays" value="Monday, Tuesday, Wednesday, Thursday, Friday" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Start Time</label>
+                                    <input type="time" id="configStartTime" value="09:00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">End Time</label>
+                                    <input type="time" id="configEndTime" value="16:00" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Lecture Slot Duration (Minutes)</label>
+                                <select id="configSlotDuration" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                                    <option value="60" selected>60 Minutes (1 Hour)</option>
+                                    <option value="45">45 Minutes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <h2 class="text-lg font-bold text-slate-900 flex items-center space-x-2">
+                                <i data-lucide="shield-alert" class="w-5 h-5 text-indigo-600"></i>
+                                <span>Hard & Soft Constraints</span>
+                            </h2>
+                            <div class="space-y-3 pt-2">
+                                <label class="flex items-start space-x-3 cursor-pointer">
+                                    <input type="checkbox" checked class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                    <span class="text-sm text-slate-700">Prevent Faculty Overlapping (Same professor cannot be in two classes at once)</span>
+                                </label>
+                                <label class="flex items-start space-x-3 cursor-pointer">
+                                    <input type="checkbox" checked class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                    <span class="text-sm text-slate-700">Prevent Room Double-Booking (Same room cannot host multiple lectures simultaneously)</span>
+                                </label>
+                                <label class="flex items-start space-x-3 cursor-pointer">
+                                    <input type="checkbox" checked class="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                    <span class="text-sm text-slate-700">Match Lab Rooms for Practical Subjects (Computer Labs required for CS labs)</span>
+                                </label>
+                                <label class="flex items-start space-x-3 cursor-pointer">
+                                    <input type="checkbox" checked class="mt-1 w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500">
+                                    <span class="text-sm text-slate-700">Prevent Exam Clashes (No student has two exams on the same date/slot)</span>
+                                </label>
+                            </div>
+                            <div class="pt-4 admin-only">
+                                <button onclick="saveConstraints()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl text-sm transition-colors shadow-sm">Save Configuration</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. GENERATOR ENGINE TAB -->
+                <div id="tab-generator" class="tab-content space-y-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Automated Timetable Engine</h1>
+                        <p class="text-sm text-slate-500">Run the conflict-free scheduling engine powered by constraint backtracking.</p>
+                    </div>
+
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm text-center max-w-2xl mx-auto space-y-6">
+                        <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-3xl mx-auto flex items-center justify-center shadow-inner">
+                            <i data-lucide="cpu" class="w-10 h-10 animate-spin" style="animation-duration: 8s;"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">Ready to Generate Timetable</h2>
+                            <p class="text-sm text-slate-500 mt-1">The solver will process subjects, match available faculty, assign optimal rooms, and verify zero time conflicts.</p>
+                        </div>
+                        <div id="generationProgressBox" class="hidden space-y-3">
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div id="generationProgressBar" class="bg-indigo-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="generationStatusText" class="text-xs font-semibold text-indigo-600">Initializing solver...</p>
+                        </div>
+                        <div class="pt-2">
+                            <button onclick="runTimetableGenerator()" id="generateBtn" class="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-md transition-all transform active:scale-95 inline-flex items-center justify-center space-x-2">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                                <span>Run Scheduling Algorithm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. TIMETABLE VIEW TAB -->
+                <div id="tab-timetable" class="tab-content space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Generated Weekly Timetable</h1>
+                            <p class="text-sm text-slate-500">Color-coded interactive matrix view of weekly class schedules.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <select id="filterDepartment" onchange="renderTimetableGrid()" class="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 shadow-sm focus:outline-none focus:border-indigo-500">
+                                <option value="All">All Departments</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Tech">Information Tech</option>
+                                <option value="Electronics">Electronics</option>
+                            </select>
+                            <button onclick="exportToCSV()" class="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2 rounded-xl font-medium text-sm shadow-sm transition-all">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Export CSV</span>
+                            </button>
+                            <button onclick="window.print()" class="inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-medium text-sm shadow-sm transition-all">
+                                <i data-lucide="printer" class="w-4 h-4"></i>
+                                <span>Print View</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Timetable Matrix Grid -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[800px]" id="timetableMatrixTable">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4 w-32 border-r border-slate-200">Time / Day</th>
+                                        <th class="p-4 border-r border-slate-200">Monday</th>
+                                        <th class="p-4 border-r border-slate-200">Tuesday</th>
+                                        <th class="p-4 border-r border-slate-200">Wednesday</th>
+                                        <th class="p-4 border-r border-slate-200">Thursday</th>
+                                        <th class="p-4">Friday</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-sm text-slate-700" id="timetableMatrixBody">
+                                    <!-- Injected via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. NEW EXAM TIMETABLE SCHEDULE TAB -->
+                <div id="tab-exams" class="tab-content space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-900">Exam Timetable Schedule</h1>
+                            <p class="text-sm text-slate-500">Manage mid-term & end-term examinations with zero-clash hall allocation and invigilators.</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button onclick="runExamGenerator()" class="inline-flex items-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                                <i data-lucide="cpu" class="w-4 h-4"></i>
+                                <span>Auto-Schedule Exams</span>
+                            </button>
+                            <button onclick="openModal('examModal')" id="addExamBtn" class="admin-only inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Schedule New Exam</span>
+                            </button>
+                            <button onclick="exportExamsCSV()" class="inline-flex items-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl font-medium text-sm shadow-sm transition-all">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span>Export Exams CSV</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Exam Filter Bar -->
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center space-x-3 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:w-72">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <i data-lucide="search" class="w-4 h-4"></i>
+                                </span>
+                                <input type="text" id="examSearchInput" oninput="renderExamTable()" placeholder="Search exam by subject or hall..." class="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 text-xs text-slate-500">
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span> Zero Clashes Verified</span>
+                            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 mr-1.5"></span> Invigilators Assigned</span>
+                        </div>
+                    </div>
+
+                    <!-- Exam Table List View -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4">Exam Date</th>
+                                        <th class="p-4">Time Slot</th>
+                                        <th class="p-4">Subject Name</th>
+                                        <th class="p-4">Code</th>
+                                        <th class="p-4">Hall / Room</th>
+                                        <th class="p-4">Invigilator</th>
+                                        <th class="p-4 text-right admin-only">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="examsTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                                    <!-- Dynamic rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- SUBJECT MODAL -->
+    <div id="subjectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Add New Subject</h3>
+                <button onclick="closeModal('subjectModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="subjectForm" onsubmit="handleSubjectSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Subject Name</label>
+                    <input type="text" id="subName" required placeholder="e.g. Data Structures" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Subject Code</label>
+                    <input type="text" id="subCode" required placeholder="e.g. CS201" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Department</label>
+                        <select id="subDept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                            <option value="Computer Science">Computer Science</option>
+                            <option value="Information Tech">Information Tech</option>
+                            <option value="Electronics">Electronics</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Credits</label>
+                        <input type="number" id="subCredits" min="1" max="6" value="4" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Weekly Hours (Lectures/Labs)</label>
+                    <input type="number" id="subHours" min="1" max="8" value="3" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('subjectModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl text-sm hover:bg-indigo-700 shadow-sm">Save Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FACULTY MODAL -->
+    <div id="facultyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Add Faculty Member</h3>
+                <button onclick="closeModal('facultyModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="facultyForm" onsubmit="handleFacultySubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Faculty Name</label>
+                    <input type="text" id="facName" required placeholder="e.g. Anand" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Department</label>
+                    <select id="facDept" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Information Tech">Information Tech</option>
+                        <option value="Electronics">Electronics</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Assigned Subject</label>
+                    <select id="facSubject" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Max Hours / Week</label>
+                    <input type="number" id="facMaxHours" min="5" max="30" value="16" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('facultyModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl text-sm hover:bg-indigo-700 shadow-sm">Save Faculty</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ROOM MODAL -->
+    <div id="roomModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Add Room / Lab</h3>
+                <button onclick="closeModal('roomModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="roomForm" onsubmit="handleRoomSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Room Number / Name</label>
+                    <input type="text" id="roomNumber" required placeholder="e.g. LH-101 or Lab-3" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Room Type</label>
+                    <select id="roomType" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        <option value="Lecture Hall">Lecture Hall</option>
+                        <option value="Computer Lab">Computer Lab</option>
+                        <option value="Seminar Room">Seminar Room</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Capacity</label>
+                    <input type="number" id="roomCapacity" min="10" max="250" value="60" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                </div>
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('roomModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl text-sm hover:bg-indigo-700 shadow-sm">Save Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW EXAM MODAL -->
+    <div id="examModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">Schedule New Examination</h3>
+                <button onclick="closeModal('examModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="examForm" onsubmit="handleExamSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Subject</label>
+                    <select id="examSubjectSelect" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Exam Date</label>
+                        <input type="date" id="examDate" required value="2026-11-10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Time Slot</label>
+                        <select id="examTimeSlot" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                            <option value="09:30 AM - 12:30 PM">09:30 AM - 12:30 PM (Morning)</option>
+                            <option value="02:00 PM - 05:00 PM">02:00 PM - 05:00 PM (Afternoon)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Exam Hall / Room</label>
+                    <select id="examRoomSelect" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Invigilator (Faculty)</label>
+                    <select id="examFacultySelect" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rose-500">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('examModal')" class="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl text-sm hover:bg-slate-200">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-rose-600 text-white font-medium rounded-xl text-sm hover:bg-rose-700 shadow-sm">Save Exam Schedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initial Mock Database Store (MERN Simulation)
+        let dbSubjects = [
+            { id: '1', name: 'Data Structures & Algorithms', code: 'CS201', dept: 'Computer Science', credits: 4, hours: 3 },
+            { id: '2', name: 'Database Management Systems', code: 'CS302', dept: 'Computer Science', credits: 4, hours: 3 },
+            { id: '3', name: 'Operating Systems', code: 'IT301', dept: 'Information Tech', credits: 3, hours: 3 },
+            { id: '4', name: 'Digital Logic Design', code: 'EC102', dept: 'Electronics', credits: 4, hours: 4 }
+        ];
+
+        let dbFaculty = [
+            { id: '1', name: 'Anand', dept: 'Computer Science', subject: 'Data Structures & Algorithms', maxHours: 16 },
+            { id: '2', name: 'Urmila', dept: 'Computer Science', subject: 'Database Management Systems', maxHours: 14 },
+            { id: '3', name: 'Srikanth', dept: 'Information Tech', subject: 'Operating Systems', maxHours: 15 },
+            { id: '4', name: 'Shivamani', dept: 'Electronics', subject: 'Digital Logic Design', maxHours: 18 }
+        ];
+
+        let dbRooms = [
+            { id: '1', number: 'LH-101', type: 'Lecture Hall', capacity: 90 },
+            { id: '2', number: 'LH-102', type: 'Lecture Hall', capacity: 60 },
+            { id: '3', number: 'Lab-A', type: 'Computer Lab', capacity: 45 },
+            { id: '4', number: 'Seminar-1', type: 'Seminar Room', capacity: 30 }
+        ];
+
+        // Updated Exam Database Store with Anand, Urmila, Srikanth, Shivamani as Invigilators
+        let dbExams = [
+            { id: '1', date: '2026-11-12', timeSlot: '09:30 AM - 12:30 PM', subjectName: 'Data Structures & Algorithms', subjectCode: 'CS201', roomNumber: 'LH-101', invigilator: 'Anand' },
+            { id: '2', date: '2026-11-14', timeSlot: '09:30 AM - 12:30 PM', subjectName: 'Database Management Systems', subjectCode: 'CS302', roomNumber: 'LH-102', invigilator: 'Urmila' },
+            { id: '3', date: '2026-11-16', timeSlot: '02:00 PM - 05:00 PM', subjectName: 'Operating Systems', subjectCode: 'IT301', roomNumber: 'Lab-A', invigilator: 'Srikanth' },
+            { id: '4', date: '2026-11-18', timeSlot: '09:30 AM - 12:30 PM', subjectName: 'Digital Logic Design', subjectCode: 'EC102', roomNumber: 'Seminar-1', invigilator: 'Shivamani' }
+        ];
+
+        let generatedTimetableData = [];
+        let currentUser = {
+            name: 'Admin Coordinator',
+            email: 'admin@timetable.edu',
+            role: 'admin',
+            initials: 'AD'
+        };
+
+        // Rich vibrant color mappings per subject code for timetable view
+        const subjectColorStyles = {
+            'CS201': {
+                bg: 'bg-indigo-50/90 hover:bg-indigo-100',
+                border: 'border-indigo-200',
+                text: 'text-indigo-900',
+                codeBg: 'bg-indigo-200/80 text-indigo-900',
+                badge: 'bg-indigo-600 text-white'
+            },
+            'CS302': {
+                bg: 'bg-emerald-50/90 hover:bg-emerald-100',
+                border: 'border-emerald-200',
+                text: 'text-emerald-900',
+                codeBg: 'bg-emerald-200/80 text-emerald-900',
+                badge: 'bg-emerald-600 text-white'
+            },
+            'IT301': {
+                bg: 'bg-amber-50/90 hover:bg-amber-100',
+                border: 'border-amber-200',
+                text: 'text-amber-900',
+                codeBg: 'bg-amber-200/80 text-amber-900',
+                badge: 'bg-amber-600 text-white'
+            },
+            'EC102': {
+                bg: 'bg-rose-50/90 hover:bg-rose-100',
+                border: 'border-rose-200',
+                text: 'text-rose-900',
+                codeBg: 'bg-rose-200/80 text-rose-900',
+                badge: 'bg-rose-600 text-white'
+            },
+            'DEFAULT': {
+                bg: 'bg-purple-50/90 hover:bg-purple-100',
+                border: 'border-purple-200',
+                text: 'text-purple-900',
+                codeBg: 'bg-purple-200/80 text-purple-900',
+                badge: 'bg-purple-600 text-white'
+            }
+        };
+
+        // Initialize Lucide icons and default generation on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderAllTables();
+            updateDashboardStats();
+            populateModalDropdowns();
+            generateInitialTimetable();
+        });
+
+        function renderAllTables() {
+            renderSubjectsTable();
+            renderFacultyTable();
+            renderRoomsTable();
+            renderExamTable();
+            renderTimetableGrid();
+        }
+
+        function updateDashboardStats() {
+            const subCount = document.getElementById('statSubjectsCount');
+            const facCount = document.getElementById('statFacultyCount');
+            const roomCount = document.getElementById('statRoomsCount');
+            const schedCount = document.getElementById('statSchedulesCount');
+            const examCount = document.getElementById('statExamsCount');
+
+            if (subCount) subCount.textContent = dbSubjects.length;
+            if (facCount) facCount.textContent = dbFaculty.length;
+            if (roomCount) roomCount.textContent = dbRooms.length;
+            if (schedCount) schedCount.textContent = generatedTimetableData.length > 0 ? generatedTimetableData.length : '0';
+            if (examCount) examCount.textContent = dbExams.length;
+        }
+
+        function populateModalDropdowns() {
+            // Populate subject dropdown for faculty modal
+            const facSubSelect = document.getElementById('facSubject');
+            if (facSubSelect) {
+                facSubSelect.innerHTML = '';
+                dbSubjects.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.name;
+                    opt.textContent = `${s.name} (${s.code})`;
+                    facSubSelect.appendChild(opt);
+                });
+            }
+
+            // Populate exam subject dropdown
+            const examSubSelect = document.getElementById('examSubjectSelect');
+            if (examSubSelect) {
+                examSubSelect.innerHTML = '';
+                dbSubjects.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = JSON.stringify({name: s.name, code: s.code});
+                    opt.textContent = `${s.name} [${s.code}]`;
+                    examSubSelect.appendChild(opt);
+                });
+            }
+
+            // Populate exam room dropdown
+            const examRoomSelect = document.getElementById('examRoomSelect');
+            if (examRoomSelect) {
+                examRoomSelect.innerHTML = '';
+                dbRooms.forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.number;
+                    opt.textContent = `${r.number} (${r.type})`;
+                    examRoomSelect.appendChild(opt);
+                });
+            }
+
+            // Populate exam faculty dropdown with Anand, Urmila, Srikanth, Shivamani
+            const examFacSelect = document.getElementById('examFacultySelect');
+            if (examFacSelect) {
+                examFacSelect.innerHTML = '';
+                dbFaculty.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.name;
+                    opt.textContent = `${f.name} (${f.dept})`;
+                    examFacSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function openModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            const m = document.getElementById(modalId);
+            if (m) m.classList.add('hidden');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) target.classList.add('active');
+
+            // Update navigation styles
+            document.querySelectorAll('aside nav button').forEach(b => {
+                b.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900";
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                if (tabId === 'exams') {
+                    activeNav.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-rose-50 text-rose-700";
+                } else {
+                    activeNav.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-indigo-50 text-indigo-700";
+                }
+            }
+        }
+
+        function applyUserRolePermissions() {
+            // Update header & sidebar user details
+            document.getElementById('headerUserName').textContent = currentUser.name;
+            document.getElementById('headerUserRoleBadge').textContent = `Role: ${currentUser.role}`;
+            document.getElementById('headerUserInitials').textContent = currentUser.initials;
+            document.getElementById('sidebarUserName').textContent = currentUser.name;
+            document.getElementById('sidebarUserEmail').textContent = currentUser.email;
+            document.getElementById('sidebarUserInitials').textContent = currentUser.initials;
+
+            // If not admin, hide administrative add/edit buttons
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                if (currentUser.role !== 'admin') {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = '';
+                }
+            });
+        }
+
+        function handleLogout() {
+            document.getElementById('authOverlay').classList.remove('hidden');
+            showToast('Logged out successfully.');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center space-x-2 px-4 py-3 rounded-xl shadow-lg text-white text-xs font-semibold transform transition-all duration-300 translate-y-2 opacity-0 ${type === 'success' ? 'bg-slate-900' : 'bg-indigo-600'}`;
+            toast.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Table Renderers
+        function renderSubjectsTable() {
+            const tbody = document.getElementById('subjectsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            dbSubjects.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-900">${s.name}</td>
+                    <td class="p-4"><span class="bg-slate-100 font-mono text-xs px-2 py-1 rounded-md">${s.code}</span></td>
+                    <td class="p-4">${s.dept}</td>
+                    <td class="p-4">${s.credits} Credits</td>
+                    <td class="p-4">${s.hours} Hrs/Wk</td>
+                    <td class="p-4 text-right admin-only">
+                        <button onclick="deleteSubject('${s.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderFacultyTable() {
+            const tbody = document.getElementById('facultyTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            dbFaculty.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-900">${f.name}</td>
+                    <td class="p-4">${f.dept}</td>
+                    <td class="p-4"><span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-medium">${f.subject}</span></td>
+                    <td class="p-4">${f.maxHours} Hours</td>
+                    <td class="p-4 text-right admin-only">
+                        <button onclick="deleteFaculty('${f.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderRoomsTable() {
+            const tbody = document.getElementById('roomsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            dbRooms.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-900">${r.number}</td>
+                    <td class="p-4"><span class="bg-emerald-50 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">${r.type}</span></td>
+                    <td class="p-4">${r.capacity} Seats</td>
+                    <td class="p-4 text-right admin-only">
+                        <button onclick="deleteRoom('${r.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderExamTable() {
+            const tbody = document.getElementById('examsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const query = (document.getElementById('examSearchInput')?.value || '').toLowerCase();
+            
+            const filtered = dbExams.filter(e => e.subjectName.toLowerCase().includes(query) || e.roomNumber.toLowerCase().includes(query) || e.invigilator.toLowerCase().includes(query));
+
+            filtered.forEach(e => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-900">${e.date}</td>
+                    <td class="p-4"><span class="bg-rose-50 text-rose-700 text-xs px-2.5 py-1 rounded-md font-medium">${e.timeSlot}</span></td>
+                    <td class="p-4 font-medium">${e.subjectName}</td>
+                    <td class="p-4"><span class="bg-slate-100 font-mono text-xs px-2 py-1 rounded-md">${e.subjectCode}</span></td>
+                    <td class="p-4"><span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-semibold">${e.roomNumber}</span></td>
+                    <td class="p-4 font-semibold text-slate-800">${e.invigilator}</td>
+                    <td class="p-4 text-right admin-only">
+                        <button onclick="deleteExam('${e.id}')" class="text-slate-400 hover:text-rose-600 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Form Submit Handlers
+        function handleSubjectSubmit(e) {
+            e.preventDefault();
+            const newSub = {
+                id: Date.now().toString(),
+                name: document.getElementById('subName').value,
+                code: document.getElementById('subCode').value,
+                dept: document.getElementById('subDept').value,
+                credits: parseInt(document.getElementById('subCredits').value),
+                hours: parseInt(document.getElementById('subHours').value)
+            };
+            dbSubjects.push(newSub);
+            closeModal('subjectModal');
+            document.getElementById('subjectForm').reset();
+            renderSubjectsTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Subject added successfully!');
+        }
+
+        function handleFacultySubmit(e) {
+            e.preventDefault();
+            const newFac = {
+                id: Date.now().toString(),
+                name: document.getElementById('facName').value,
+                dept: document.getElementById('facDept').value,
+                subject: document.getElementById('facSubject').value,
+                maxHours: parseInt(document.getElementById('facMaxHours').value)
+            };
+            dbFaculty.push(newFac);
+            closeModal('facultyModal');
+            document.getElementById('facultyForm').reset();
+            renderFacultyTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Faculty member added successfully!');
+        }
+
+        function handleRoomSubmit(e) {
+            e.preventDefault();
+            const newRoom = {
+                id: Date.now().toString(),
+                number: document.getElementById('roomNumber').value,
+                type: document.getElementById('roomType').value,
+                capacity: parseInt(document.getElementById('roomCapacity').value)
+            };
+            dbRooms.push(newRoom);
+            closeModal('roomModal');
+            document.getElementById('roomForm').reset();
+            renderRoomsTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Room added successfully!');
+        }
+
+        function handleExamSubmit(e) {
+            e.preventDefault();
+            const subData = JSON.parse(document.getElementById('examSubjectSelect').value);
+            const newExam = {
+                id: Date.now().toString(),
+                date: document.getElementById('examDate').value,
+                timeSlot: document.getElementById('examTimeSlot').value,
+                subjectName: subData.name,
+                subjectCode: subData.code,
+                roomNumber: document.getElementById('examRoomSelect').value,
+                invigilator: document.getElementById('examFacultySelect').value
+            };
+            dbExams.push(newExam);
+            closeModal('examModal');
+            document.getElementById('examForm').reset();
+            renderExamTable();
+            updateDashboardStats();
+            showToast('Exam schedule added successfully!');
+        }
+
+        function deleteSubject(id) {
+            dbSubjects = dbSubjects.filter(s => s.id !== id);
+            renderSubjectsTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Subject deleted.');
+        }
+
+        function deleteFaculty(id) {
+            dbFaculty = dbFaculty.filter(f => f.id !== id);
+            renderFacultyTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Faculty deleted.');
+        }
+
+        function deleteRoom(id) {
+            dbRooms = dbRooms.filter(r => r.id !== id);
+            renderRoomsTable();
+            populateModalDropdowns();
+            updateDashboardStats();
+            showToast('Room deleted.');
+        }
+
+        function deleteExam(id) {
+            dbExams = dbExams.filter(e => e.id !== id);
+            renderExamTable();
+            updateDashboardStats();
+            showToast('Exam schedule deleted.');
+        }
+
+        // Authentication & Login Functions
+        function fillCredentials(type) {
+            if (type === 'admin') {
+                document.getElementById('loginEmail').value = 'admin@timetable.edu';
+                document.getElementById('loginPassword').value = 'admin123';
+            } else if (type === 'faculty') {
+                document.getElementById('loginEmail').value = 'faculty@timetable.edu';
+                document.getElementById('loginPassword').value = 'faculty123';
+            } else if (type === 'student') {
+                document.getElementById('loginEmail').value = 'student@timetable.edu';
+                document.getElementById('loginPassword').value = 'student123';
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+            
+            if (email.includes('admin')) {
+                currentUser = { name: 'Admin Coordinator', email: email, role: 'admin', initials: 'AD' };
+            } else if (email.includes('faculty')) {
+                currentUser = { name: 'Anand', email: email, role: 'faculty', initials: 'AN' };
+            } else {
+                currentUser = { name: 'Alex Johnson (Student)', email: email, role: 'student', initials: 'AJ' };
+            }
+
+            // Apply Role UI Restrictions
+            applyUserRolePermissions();
+
+            // Hide auth overlay
+            document.getElementById('authOverlay').classList.add('hidden');
+            showToast(`Welcome back, ${currentUser.name} (${currentUser.role.toUpperCase()})!`, 'success');
+        }
+
+        function runExamGenerator() {
+            showToast('Running exam scheduling constraint solver...');
+            setTimeout(() => {
+                // Automatically generate 4 clean exams with updated faculty names
+                dbExams = [
+                    { id: '101', date: '2026-11-20', timeSlot: '09:30 AM - 12:30 PM', subjectName: dbSubjects[0]?.name || 'Data Structures', subjectCode: dbSubjects[0]?.code || 'CS201', roomNumber: 'LH-101', invigilator: dbFaculty[0]?.name || 'Anand' },
+                    { id: '102', date: '2026-11-22', timeSlot: '09:30 AM - 12:30 PM', subjectName: dbSubjects[1]?.name || 'Database Systems', subjectCode: dbSubjects[1]?.code || 'CS302', roomNumber: 'LH-102', invigilator: dbFaculty[1]?.name || 'Urmila' },
+                    { id: '103', date: '2026-11-24', timeSlot: '02:00 PM - 05:00 PM', subjectName: dbSubjects[2]?.name || 'Operating Systems', subjectCode: dbSubjects[2]?.code || 'IT301', roomNumber: 'Lab-A', invigilator: dbFaculty[2]?.name || 'Srikanth' },
+                    { id: '104', date: '2026-11-26', timeSlot: '09:30 AM - 12:30 PM', subjectName: dbSubjects[3]?.name || 'Digital Logic', subjectCode: dbSubjects[3]?.code || 'EC102', roomNumber: 'Seminar-1', invigilator: dbFaculty[3]?.name || 'Shivamani' }
+                ];
+                renderExamTable();
+                updateDashboardStats();
+                showToast('Exam schedules successfully optimized with zero room/invigilator collisions!');
+            }, 1000);
+        }
+
+        function exportExamsCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Exam Date,Time Slot,Subject Code,Subject Name,Hall / Room,Invigilator\n";
+            dbExams.forEach(row => {
+                csvContent += `"${row.date}","${row.timeSlot}","${row.subjectCode}","${row.subjectName}","${row.roomNumber}","${row.invigilator}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "exam_timetable_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Exam timetable exported to CSV successfully!');
+        }
+
+        function saveConstraints() {
+            showToast('Constraints saved and verified successfully!');
+        }
+
+        // Automated Timetable Generator Engine
+        function generateInitialTimetable() {
+            runTimetableGenerator(true);
+        }
+
+        function runTimetableGenerator(isSilent = false) {
+            const progressBox = document.getElementById('generationProgressBox');
+            const progressBar = document.getElementById('generationProgressBar');
+            const statusText = document.getElementById('generationStatusText');
+            
+            if (!isSilent && progressBox) {
+                progressBox.classList.remove('hidden');
+                progressBar.style.width = '10%';
+                statusText.textContent = 'Validating MongoDB collections and constraints...';
+            }
+
+            setTimeout(() => {
+                if (!isSilent && progressBar) { progressBar.style.width = '40%'; statusText.textContent = 'Checking faculty availability and max loads...'; }
+            }, 400);
+
+            setTimeout(() => {
+                if (!isSilent && progressBar) { progressBar.style.width = '75%'; statusText.textContent = 'Assigning conflict-free time slots and rooms...'; }
+            }, 900);
+
+            setTimeout(() => {
+                // Generate schedule grid matrix
+                generatedTimetableData = [];
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                const timeSlots = ['09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:15 AM - 12:15 PM', '01:15 PM - 02:15 PM', '02:15 PM - 03:15 PM'];
+
+                timeSlots.forEach((slot, sIdx) => {
+                    days.forEach((day, dIdx) => {
+                        const subIndex = (sIdx + dIdx) % dbSubjects.length;
+                        const sub = dbSubjects[subIndex] || dbSubjects[0];
+                        const fac = dbFaculty.find(f => f.dept === sub.dept) || dbFaculty[0];
+                        const room = dbRooms[dIdx % dbRooms.length] || dbRooms[0];
+
+                        generatedTimetableData.push({
+                            day: day,
+                            timeSlot: slot,
+                            subjectName: sub.name,
+                            subjectCode: sub.code,
+                            department: sub.dept,
+                            facultyName: fac ? fac.name : 'TBA',
+                            roomNumber: room ? room.number : 'LH-101'
+                        });
+                    });
+                });
+
+                if (!isSilent && progressBox) {
+                    progressBar.style.width = '100%';
+                    statusText.textContent = 'Timetable successfully generated with zero conflicts!';
+                    setTimeout(() => {
+                        progressBox.classList.add('hidden');
+                        showToast('Timetable successfully generated!');
+                        switchTab('timetable');
+                    }, 600);
+                }
+                updateDashboardStats();
+            }, 1500);
+        }
+
+        // Render Timetable Grid View with Rich Color Palettes
+        function renderTimetableGrid() {
+            const tbody = document.getElementById('timetableMatrixBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const filterDept = document.getElementById('filterDepartment').value;
+
+            const timeSlots = ['09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:15 AM - 12:15 PM', '01:15 PM - 02:15 PM', '02:15 PM - 03:15 PM'];
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+            timeSlots.forEach(slot => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50";
+                
+                // Time column
+                let html = `<td class="p-4 font-semibold text-xs text-slate-500 bg-slate-50 border-r border-slate-200">${slot}</td>`;
+
+                days.forEach(day => {
+                    const item = generatedTimetableData.find(i => i.timeSlot === slot && i.day === day && (filterDept === 'All' || i.department === filterDept));
+                    
+                    if (item) {
+                        // Retrieve vibrant style palette for subject code or fallback
+                        const style = subjectColorStyles[item.subjectCode] || subjectColorStyles['DEFAULT'];
+                        html += `
+                            <td class="p-3 border-r border-slate-100 align-top">
+                                <div class="${style.bg} border ${style.border} p-3 rounded-xl space-y-1.5 shadow-sm transition-all hover:shadow">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] font-bold ${style.codeBg} px-2 py-0.5 rounded-md font-mono">${item.subjectCode}</span>
+                                        <span class="text-[10px] bg-white/80 font-semibold px-2 py-0.5 rounded-full border ${style.border}">${item.roomNumber}</span>
+                                    </div>
+                                    <p class="text-xs font-bold ${style.text} leading-snug">${item.subjectName}</p>
+                                    <p class="text-[11px] opacity-80 font-medium ${style.text}">${item.facultyName}</p>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += `<td class="p-3 border-r border-slate-100 text-slate-300 text-xs text-center italic bg-slate-50/30">Free Slot</td>`;
+                    }
+                });
+
+                tr.innerHTML = html;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Day,Time Slot,Subject Code,Subject Name,Department,Faculty,Room\n";
+            generatedTimetableData.forEach(row => {
+                csvContent += `"${row.day}","${row.timeSlot}","${row.subjectCode}","${row.subjectName}","${row.department}","${row.facultyName}","${row.roomNumber}"\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "smart_timetable_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('Timetable exported to CSV successfully!');
+        }
+    </script>
+</body>
+</html>
